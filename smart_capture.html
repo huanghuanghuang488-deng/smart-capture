@@ -1,65 +1,429 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-TW">
 <head>
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Smart Capture Test</title>
-
-<style>
-body {
-    margin:0;
-    background:#000;
-}
-
-video {
-    width:100%;
-    height:80vh;
-    object-fit:cover;
-}
-
-button {
-    width:90%;
-    margin:20px;
-    padding:20px;
-    font-size:25px;
-}
-</style>
-
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Smart Capture</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: #000;
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        #video-container {
+            flex: 1;
+            width: 100%;
+            position: relative;
+            background: #000;
+            overflow: hidden;
+        }
+        #video-container video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        #status-bar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 20px;
+            background: linear-gradient(180deg, rgba(0,0,0,0.7) 0%, transparent 100%);
+            z-index: 10;
+            pointer-events: none;
+        }
+        #status-bar .count {
+            color: #fff;
+            font-size: 20px;
+            font-weight: 700;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.8);
+        }
+        #status-bar .count span {
+            color: #f9a826;
+        }
+        #status-bar .status {
+            color: #fff;
+            font-size: 15px;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.8);
+            opacity: 0.8;
+        }
+        #status-bar .close-btn {
+            background: rgba(255,255,255,0.15);
+            border: none;
+            color: #fff;
+            font-size: 24px;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            cursor: pointer;
+            pointer-events: auto;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #status-bar .close-btn:active {
+            background: rgba(255,255,255,0.3);
+            transform: scale(0.9);
+        }
+        #controls {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 30px 30px 40px;
+            background: linear-gradient(0deg, rgba(0,0,0,0.7) 0%, transparent 100%);
+            z-index: 10;
+        }
+        #controls .cancel-btn {
+            background: rgba(255,255,255,0.15);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: #fff;
+            font-size: 17px;
+            font-weight: 500;
+            padding: 12px 28px;
+            border-radius: 30px;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+        #controls .cancel-btn:active {
+            background: rgba(255,255,255,0.3);
+            transform: scale(0.95);
+        }
+        #controls .shoot-btn {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: #fff;
+            border: 4px solid rgba(255,255,255,0.3);
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 30px rgba(0,0,0,0.5);
+        }
+        #controls .shoot-btn .inner {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: #fff;
+            transition: all 0.1s;
+        }
+        #controls .shoot-btn:disabled {
+            opacity: 0.4;
+            transform: scale(0.95);
+        }
+        #controls .shoot-btn:disabled .inner {
+            background: #888;
+        }
+        #controls .shoot-btn:active:not(:disabled) .inner {
+            transform: scale(0.85);
+            background: #ddd;
+        }
+        #controls .shoot-count {
+            color: rgba(255,255,255,0.6);
+            font-size: 14px;
+            min-width: 60px;
+            text-align: right;
+        }
+        #flash {
+            position: absolute;
+            inset: 0;
+            background: #fff;
+            z-index: 20;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.05s;
+        }
+        #flash.active {
+            opacity: 1;
+            animation: flashAnim 0.2s ease-out forwards;
+        }
+        @keyframes flashAnim {
+            0% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+        #toast {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.85);
+            color: #fff;
+            padding: 20px 32px;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 600;
+            z-index: 30;
+            display: none;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+            max-width: 80%;
+            pointer-events: none;
+        }
+        #toast.show {
+            display: block;
+            animation: toastIn 0.3s ease;
+        }
+        @keyframes toastIn {
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
+            100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+        }
+        #toast .sub {
+            font-size: 13px;
+            font-weight: 400;
+            opacity: 0.6;
+            margin-top: 4px;
+        }
+        #loading {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.9);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+            color: #fff;
+            font-size: 20px;
+            font-weight: 600;
+        }
+        #loading .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(255,255,255,0.1);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-bottom: 20px;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        #loading .sub {
+            font-size: 14px;
+            opacity: 0.5;
+            margin-top: 8px;
+        }
+    </style>
 </head>
-
 <body>
 
-<video id="video" autoplay playsinline></video>
+    <div id="loading">
+        <div class="spinner"></div>
+        <div>📷 啟動相機中</div>
+        <div class="sub">請允許相機權限</div>
+    </div>
 
-<button onclick="startCamera()">
-開啟相機
-</button>
+    <div id="video-container">
+        <video id="camera-video" playsinline autoplay muted></video>
+        <div id="flash"></div>
+        <div id="status-bar">
+            <div class="count">📸 <span id="shot-count">0</span>/3</div>
+            <div class="status" id="status-text">準備拍照</div>
+            <button class="close-btn" id="close-btn">✕</button>
+        </div>
+        <div id="controls">
+            <button class="cancel-btn" id="cancel-btn">取消</button>
+            <button class="shoot-btn" id="shoot-btn" disabled>
+                <div class="inner"></div>
+            </button>
+            <div class="shoot-count" id="shoot-count-text">0/3</div>
+        </div>
+    </div>
 
+    <div id="toast">
+        <div id="toast-msg">📸 三張拍完</div>
+        <div class="sub" id="toast-sub">辨識中...</div>
+    </div>
 
-<script>
+    <script>
+        // ============================================================
+        // 🔥 設定區 - 改成你的 Server IP
+        // ============================================================
+        var SERVER_URL = 'http://192.168.0.246:8000';
 
-let stream=null;
+        // ============================================================
+        // 主程式
+        // ============================================================
+        (function() {
+            var shots = [];
+            var count = 0;
+            var stream = null;
+            var isCapturing = false;
+            var isCameraReady = false;
 
-async function startCamera(){
+            var video = document.getElementById('camera-video');
+            var shootBtn = document.getElementById('shoot-btn');
+            var cancelBtn = document.getElementById('cancel-btn');
+            var closeBtn = document.getElementById('close-btn');
+            var shotCount = document.getElementById('shot-count');
+            var shootCountText = document.getElementById('shoot-count-text');
+            var statusText = document.getElementById('status-text');
+            var flash = document.getElementById('flash');
+            var toast = document.getElementById('toast');
+            var toastMsg = document.getElementById('toast-msg');
+            var toastSub = document.getElementById('toast-sub');
+            var loading = document.getElementById('loading');
 
-    try{
-
-        stream = await navigator.mediaDevices.getUserMedia({
-            video:{
-                facingMode:"environment"
+            function updateUI() {
+                shotCount.textContent = count;
+                shootCountText.textContent = count + '/3';
+                if (count >= 3) {
+                    statusText.textContent = '✅ 完成！';
+                    statusText.style.color = '#00c853';
+                    shootBtn.disabled = true;
+                } else {
+                    statusText.textContent = isCameraReady ? '拍照中...' : '相機啟動中...';
+                    statusText.style.color = isCameraReady ? '#f9a826' : '#ff6b6b';
+                    shootBtn.disabled = !isCameraReady;
+                }
             }
-        });
 
-        document.getElementById("video").srcObject=stream;
+            function showToast(msg, sub) {
+                toastMsg.textContent = msg;
+                toastSub.textContent = sub || '';
+                toast.classList.add('show');
+                setTimeout(function() { toast.classList.remove('show'); }, 2000);
+            }
 
-    }catch(e){
+            function takeShot() {
+                if (isCapturing) return;
+                if (count >= 3) {
+                    showToast('⚠️ 已拍 3 張', '請稍候');
+                    return;
+                }
+                if (!isCameraReady || !video.videoWidth) {
+                    showToast('⚠️ 相機尚未準備好', '請稍候');
+                    return;
+                }
 
-        alert(e);
+                isCapturing = true;
+                var canvas = document.createElement('canvas');
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                var ctx = canvas.getContext('2d');
+                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                var dataUrl = canvas.toDataURL('image/jpeg', 0.9);
 
-    }
+                shots.push(dataUrl);
+                count++;
 
-}
+                flash.classList.remove('active');
+                void flash.offsetWidth;
+                flash.classList.add('active');
 
-</script>
+                if (navigator.vibrate) navigator.vibrate(15);
 
+                isCapturing = false;
+                updateUI();
+
+                if (count >= 3) {
+                    showToast('📸 三張已拍完', '辨識中...');
+                    setTimeout(function() { uploadAndClose(shots); }, 400);
+                }
+            }
+
+            function uploadAndClose(images) {
+                var url = SERVER_URL + '/api/smart_capture';
+                fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ images: images, source: 'github_pages' })
+                })
+                .then(function(res) { return res.json(); })
+                .then(function(data) {
+                    try {
+                        localStorage.setItem('smart_capture_result', JSON.stringify({
+                            session_id: data.session_id || '',
+                            plate: data.plate || '',
+                            confidence: data.confidence || 0,
+                            success: data.success || false,
+                            message: data.message || '',
+                            timestamp: Date.now()
+                        }));
+                    } catch(e) {}
+                    window.close();
+                })
+                .catch(function(err) {
+                    console.error('上傳失敗:', err);
+                    try {
+                        localStorage.setItem('smart_capture_result', JSON.stringify({
+                            success: false,
+                            message: '上傳失敗: ' + err.message,
+                            timestamp: Date.now()
+                        }));
+                    } catch(e) {}
+                    window.close();
+                });
+            }
+
+            function cancel() {
+                if (count > 0 && count < 3) {
+                    if (!confirm('確定取消？已拍 ' + count + ' 張')) return;
+                }
+                cleanup();
+                window.close();
+            }
+
+            function cleanup() {
+                if (stream) {
+                    stream.getTracks().forEach(function(track) { track.stop(); });
+                    stream = null;
+                }
+            }
+
+            // ─── 開啟相機 ───
+            navigator.mediaDevices.getUserMedia({
+                video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
+            })
+            .then(function(s) {
+                stream = s;
+                video.srcObject = s;
+                video.play();
+                isCameraReady = true;
+                loading.style.display = 'none';
+                updateUI();
+                console.log('✅ 相機已開啟');
+            })
+            .catch(function(err) {
+                console.error('❌ 相機開啟失敗:', err);
+                loading.innerHTML = '<div style="color:#ff1744;font-size:18px;">❌ 無法開啟相機</div><div style="font-size:14px;opacity:0.6;margin-top:8px;">' + err.message + '</div><button onclick="location.reload()" style="margin-top:20px;padding:12px 30px;background:#007aff;color:#fff;border:none;border-radius:10px;font-size:16px;cursor:pointer;">重新嘗試</button>';
+            });
+
+            shootBtn.addEventListener('click', takeShot);
+            cancelBtn.addEventListener('click', cancel);
+            closeBtn.addEventListener('click', cancel);
+            video.addEventListener('click', takeShot);
+
+            document.addEventListener('keydown', function(e) {
+                if (e.key === ' ' || e.key === 'Space') { e.preventDefault(); takeShot(); }
+                if (e.key === 'Escape') { cancel(); }
+            });
+
+            window.addEventListener('beforeunload', function() { cleanup(); });
+
+            updateUI();
+            console.log('📷 Smart Capture 已啟動 (GitHub Pages 版)');
+        })();
+    </script>
 </body>
 </html>
