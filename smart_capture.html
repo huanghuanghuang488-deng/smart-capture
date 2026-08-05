@@ -115,7 +115,7 @@
             letter-spacing: 1px;
         }
 
-        /* 🔥 右下角：取消按鈕（調高位置） */
+        /* 右下角：取消按鈕 */
         #bottom-right {
             position: absolute !important;
             bottom: 80px !important;
@@ -256,7 +256,7 @@
             <div class="shoot-label" id="shoot-label">拍照</div>
         </div>
 
-        <!-- 🔥 右下角：取消按鈕 -->
+        <!-- 右下角：取消 -->
         <div id="bottom-right">
             <button class="cancel-btn" id="cancel-btn">取消</button>
         </div>
@@ -358,13 +358,25 @@
 
             function uploadAndClose(images) {
                 var url = SERVER_URL + '/api/smart_capture';
+                showToast('📤 上傳中...', '請稍候');
+
                 fetch(url, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ images: images, source: 'github_pages' })
                 })
-                .then(function(res) { return res.json(); })
+                .then(function(res) {
+                    console.log('📡 回應狀態:', res.status);
+                    return res.json();
+                })
                 .then(function(data) {
+                    console.log('📊 資料:', data);
+                    if (data.success) {
+                        showToast('✅ ' + data.plate, '信心: ' + data.confidence);
+                    } else {
+                        showToast('❌ ' + (data.message || '失敗'), '');
+                    }
+                    // 存入 localStorage
                     try {
                         localStorage.setItem('smart_capture_result', JSON.stringify({
                             session_id: data.session_id || '',
@@ -375,10 +387,15 @@
                             timestamp: Date.now()
                         }));
                     } catch(e) {}
-                    window.close();
+                    
+                    // 等 1.5 秒讓 Toast 顯示再關閉
+                    setTimeout(function() {
+                        window.close();
+                    }, 1500);
                 })
                 .catch(function(err) {
-                    console.error('上傳失敗:', err);
+                    console.error('❌ 上傳失敗:', err);
+                    showToast('❌ 上傳失敗', err.message);
                     try {
                         localStorage.setItem('smart_capture_result', JSON.stringify({
                             success: false,
@@ -386,7 +403,9 @@
                             timestamp: Date.now()
                         }));
                     } catch(e) {}
-                    window.close();
+                    setTimeout(function() {
+                        window.close();
+                    }, 2000);
                 });
             }
 
