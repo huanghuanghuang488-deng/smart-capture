@@ -31,7 +31,7 @@
             object-fit: cover;
         }
 
-        /* 右上角：關閉 + 計數器 */
+        /* 右上角：計數器 + 狀態 */
         #top-right {
             position: absolute;
             top: 16px;
@@ -40,29 +40,8 @@
             display: flex;
             flex-direction: column;
             align-items: flex-end;
-            gap: 10px;
+            gap: 6px;
             pointer-events: none;
-        }
-        #top-right .close-btn {
-            background: rgba(0,0,0,0.5);
-            border: none;
-            color: #fff;
-            font-size: 22px;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            cursor: pointer;
-            pointer-events: auto;
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s;
-        }
-        #top-right .close-btn:active {
-            background: rgba(255,255,255,0.3);
-            transform: scale(0.9);
         }
         #top-right .count-badge {
             background: rgba(0,0,0,0.6);
@@ -71,7 +50,7 @@
             padding: 5px 14px;
             border-radius: 20px;
             color: #fff;
-            font-size: 15px;
+            font-size: 17px;
             font-weight: 600;
             pointer-events: none;
             border: 1px solid rgba(255,255,255,0.1);
@@ -96,7 +75,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 12px;
+            gap: 8px;
         }
         #shoot-wrapper .shoot-btn {
             width: 76px;
@@ -260,9 +239,8 @@
         <video id="camera-video" playsinline autoplay muted></video>
         <div id="flash"></div>
 
-        <!-- 右上角：關閉 + 計數器 -->
+        <!-- 右上角：計數器 + 狀態 -->
         <div id="top-right">
-            <button class="close-btn" id="close-btn">✕</button>
             <div class="count-badge">📸 <span id="shot-count">0</span>/3</div>
             <div class="status-text" id="status-text">準備拍照</div>
         </div>
@@ -305,7 +283,6 @@
             var video = document.getElementById('camera-video');
             var shootBtn = document.getElementById('shoot-btn');
             var cancelBtn = document.getElementById('cancel-btn');
-            var closeBtn = document.getElementById('close-btn');
             var shotCount = document.getElementById('shot-count');
             var statusText = document.getElementById('status-text');
             var shootLabel = document.getElementById('shoot-label');
@@ -445,7 +422,6 @@
 
             shootBtn.addEventListener('click', takeShot);
             cancelBtn.addEventListener('click', cancel);
-            closeBtn.addEventListener('click', cancel);
             video.addEventListener('click', takeShot);
 
             document.addEventListener('keydown', function(e) {
