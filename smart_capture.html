@@ -115,29 +115,32 @@
             letter-spacing: 1px;
         }
 
-        /* 右下角：取消按鈕 */
+        /* 🔥 右下角：取消按鈕（強制顯示） */
         #bottom-right {
-            position: absolute;
-            bottom: 30px;
-            right: 30px;
-            z-index: 10;
+            position: absolute !important;
+            bottom: 30px !important;
+            right: 30px !important;
+            z-index: 10 !important;
         }
         #bottom-right .cancel-btn {
-            background: rgba(255,255,255,0.12);
-            border: 1px solid rgba(255,255,255,0.2);
-            color: #fff;
-            font-size: 16px;
-            font-weight: 500;
-            padding: 10px 26px;
-            border-radius: 30px;
-            cursor: pointer;
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            transition: all 0.2s;
+            background: rgba(255,255,255,0.12) !important;
+            border: 1px solid rgba(255,255,255,0.2) !important;
+            color: #fff !important;
+            font-size: 16px !important;
+            font-weight: 500 !important;
+            padding: 10px 26px !important;
+            border-radius: 30px !important;
+            cursor: pointer !important;
+            backdrop-filter: blur(10px) !important;
+            -webkit-backdrop-filter: blur(10px) !important;
+            transition: all 0.2s !important;
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
         }
         #bottom-right .cancel-btn:active {
-            background: rgba(255,255,255,0.3);
-            transform: scale(0.95);
+            background: rgba(255,255,255,0.3) !important;
+            transform: scale(0.95) !important;
         }
 
         /* 閃光動畫 */
@@ -225,6 +228,12 @@
             opacity: 0.5;
             margin-top: 8px;
         }
+
+        /* 測試用：如果取消按鈕還是不見，顯示紅色外框 */
+        #bottom-right {
+            outline: 2px solid red;
+            outline-offset: 4px;
+        }
     </style>
 </head>
 <body>
@@ -253,7 +262,7 @@
             <div class="shoot-label" id="shoot-label">拍照</div>
         </div>
 
-        <!-- 右下角：取消 -->
+        <!-- 🔥 右下角：取消按鈕 -->
         <div id="bottom-right">
             <button class="cancel-btn" id="cancel-btn">取消</button>
         </div>
