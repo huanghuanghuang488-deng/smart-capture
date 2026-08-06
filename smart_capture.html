@@ -2,39 +2,95 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>postMessage 測試</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Smart Capture - 測試</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{background:#000;font-family:-apple-system,BlinkMacSystemFont,sans-serif;display:flex;flex-direction:column;height:100vh}
+        video{width:100%;flex:1;object-fit:cover}
+        #controls{display:flex;gap:12px;padding:20px;background:#1a1a1a;flex-shrink:0}
+        button{flex:1;padding:16px;border:none;border-radius:10px;font-size:18px;font-weight:bold;cursor:pointer}
+        .shoot{background:#007aff;color:#fff}
+        .cancel{background:#ff3b30;color:#fff}
+        #status{padding:12px;background:#0a1929;color:#888;font-size:13px;text-align:center;flex-shrink:0}
+    </style>
 </head>
 <body>
-    <div style="padding:40px;text-align:center;font-family:sans-serif;">
-        <h1>📡 postMessage 測試</h1>
-        <p>按下按鈕發送訊息給書籤</p>
-        <button onclick="sendMessage()" style="padding:20px 60px;font-size:24px;background:#007aff;color:#fff;border:none;border-radius:12px;">
-            📤 發送 HELLO
-        </button>
-        <div id="status" style="margin-top:20px;color:#888;font-size:14px;"></div>
+
+    <video id="video" playsinline autoplay muted></video>
+
+    <div id="status">⏳ 相機啟動中...</div>
+
+    <div id="controls">
+        <button class="cancel" onclick="cancel()">取消</button>
+        <button class="shoot" id="shootBtn" disabled onclick="takeShot()">📷 拍照並傳送</button>
     </div>
 
     <script>
-        function sendMessage() {
-            var status = document.getElementById('status');
-            status.textContent = '⏳ 嘗試發送...';
+        var stream = null;
+        var isReady = false;
+        var video = document.getElementById('video');
+        var status = document.getElementById('status');
+        var shootBtn = document.getElementById('shootBtn');
 
+        // ─── 拍照並傳送 ───
+        function takeShot() {
+            if (!isReady) {
+                status.textContent = '⚠️ 相機尚未準備好';
+                return;
+            }
+
+            var canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            var ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            var dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+
+            status.textContent = '📤 傳送中... (Base64 長度: ' + dataUrl.length + ')';
+
+            // 🔥 只傳一張照片
             if (window.opener) {
                 window.opener.postMessage({
-                    type: 'smart_capture_result',
-                    plate: 'TEST-1234',
-                    confidence: 99.9,
-                    success: true,
-                    message: 'HELLO from GitHub Pages'
+                    type: 'SMART_CAPTURE',
+                    image: dataUrl,
+                    length: dataUrl.length
                 }, '*');
-                status.textContent = '✅ 已發送！請看書籤面板的 alert';
-                alert('✅ 已發送給 opener');
+                status.textContent = '✅ 已傳送！長度: ' + dataUrl.length;
+                alert('✅ 已傳送照片 (base64 長度: ' + dataUrl.length + ')');
             } else {
-                status.textContent = '❌ 沒有 opener（不是從書籤開的）';
-                alert('❌ 沒有 opener');
+                status.textContent = '❌ 沒有 opener';
+                alert('❌ 沒有 opener，請從書籤開啟');
             }
         }
+
+        function cancel() {
+            if (stream) {
+                stream.getTracks().forEach(function(t) { t.stop(); });
+            }
+            window.close();
+        }
+
+        // ─── 開啟相機 ───
+        navigator.mediaDevices.getUserMedia({
+            video: { facingMode: 'environment' }
+        })
+        .then(function(s) {
+            stream = s;
+            video.srcObject = s;
+            video.play();
+            isReady = true;
+            shootBtn.disabled = false;
+            status.textContent = '📸 準備好，按「拍照並傳送」';
+            console.log('✅ 相機已開啟');
+        })
+        .catch(function(err) {
+            status.textContent = '❌ 相機失敗: ' + err.message;
+            console.error(err);
+        });
+
+        // 點擊畫面拍照
+        video.addEventListener('click', takeShot);
     </script>
 </body>
 </html>
