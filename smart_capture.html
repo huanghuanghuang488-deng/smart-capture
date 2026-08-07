@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=3.0, user-scalable=yes, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover">
     <title>Smart Capture</title>
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
@@ -22,6 +22,7 @@
         #video-container{
             flex:1;
             width:100%;
+            height:100vh;
             position:relative;
             background:#000;
             overflow:hidden;
@@ -34,12 +35,22 @@
             touch-action: manipulation;
             pointer-events: auto;
         }
-        /* 🔥 頂部資訊：固定在視窗 */
+
+        /* 🔥 所有 UI 元件使用 fixed + JS 控制位置 */
+        #ui-layer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 100;
+        }
+
         #top-right{
-            position:fixed;
+            position:absolute;
             top:16px;
             right:16px;
-            z-index:100;
             display:flex;
             flex-direction:column;
             align-items:flex-end;
@@ -66,18 +77,14 @@
             text-shadow:0 2px 8px rgba(0,0,0,0.8)
         }
 
-        /* 🔥 拍照按鈕：固定在視窗 */
         #shoot-wrapper{
-            position:fixed;
-            top:50%;
-            right:30px;
-            transform:translateY(-50%);
-            z-index:100;
+            position:absolute;
             display:flex;
             flex-direction:column;
             align-items:center;
             gap:8px;
             pointer-events:none;
+            /* left 和 top 由 JS 控制 */
         }
         #shoot-wrapper .shoot-btn{
             width:76px;
@@ -118,13 +125,10 @@
             pointer-events:none;
         }
 
-        /* 🔥 取消按鈕：固定在視窗 */
         #bottom-right{
-            position:fixed!important;
-            bottom:80px!important;
-            right:30px!important;
-            z-index:100!important;
+            position:absolute;
             pointer-events:none;
+            /* left 和 top 由 JS 控制 */
         }
         #bottom-right .cancel-btn{
             background:rgba(255,255,255,0.12)!important;
@@ -246,21 +250,23 @@
         <div id="flash"></div>
     </div>
 
-    <!-- 🔥 所有按鈕移到 video-container 外面，用 fixed 定位 -->
-    <div id="top-right">
-        <div class="count-badge">📸 <span id="shot-count">0</span>/3</div>
-        <div class="status-text" id="status-text">準備拍照</div>
-    </div>
+    <!-- 🔥 UI 層：由 JS 控制位置 -->
+    <div id="ui-layer">
+        <div id="top-right">
+            <div class="count-badge">📸 <span id="shot-count">0</span>/3</div>
+            <div class="status-text" id="status-text">準備拍照</div>
+        </div>
 
-    <div id="shoot-wrapper">
-        <button class="shoot-btn" id="shoot-btn" disabled>
-            <div class="inner"></div>
-        </button>
-        <div class="shoot-label" id="shoot-label">拍照</div>
-    </div>
+        <div id="shoot-wrapper">
+            <button class="shoot-btn" id="shoot-btn" disabled>
+                <div class="inner"></div>
+            </button>
+            <div class="shoot-label" id="shoot-label">拍照</div>
+        </div>
 
-    <div id="bottom-right">
-        <button class="cancel-btn" id="cancel-btn">取消</button>
+        <div id="bottom-right">
+            <button class="cancel-btn" id="cancel-btn">取消</button>
+        </div>
     </div>
 
     <div id="toast">
@@ -295,6 +301,56 @@
             var toastMsg = document.getElementById('toast-msg');
             var toastSub = document.getElementById('toast-sub');
             var loading = document.getElementById('loading');
+
+            // 🔥 UI 元件
+            var shootWrapper = document.getElementById('shoot-wrapper');
+            var bottomRight = document.getElementById('bottom-right');
+
+            // ─── 🔥 visualViewport 定位 ───
+            function updateUIPosition() {
+                var vv = window.visualViewport;
+                if (!vv) return;
+
+                var vw = vv.width;
+                var vh = vv.height;
+                var offsetLeft = vv.offsetLeft || 0;
+                var offsetTop = vv.offsetTop || 0;
+
+                // 🔥 拍照按鈕：固定在可視範圍的右邊
+                var btnSize = 76;
+                var margin = 20;
+                var shootX = offsetLeft + vw - btnSize - margin;
+                var shootY = offsetTop + (vh / 2) - (btnSize / 2);
+
+                shootWrapper.style.left = shootX + 'px';
+                shootWrapper.style.top = shootY + 'px';
+
+                // 🔥 取消按鈕：固定在可視範圍的右下角
+                var cancelWidth = 100; // 約略寬度
+                var cancelHeight = 50;
+                var cancelMargin = 20;
+                var cancelX = offsetLeft + vw - cancelWidth - cancelMargin;
+                var cancelY = offsetTop + vh - cancelHeight - cancelMargin;
+
+                bottomRight.style.left = cancelX + 'px';
+                bottomRight.style.top = cancelY + 'px';
+
+                // 🔥 頂部資訊：固定在可視範圍的右上角
+                var topRight = document.getElementById('top-right');
+                topRight.style.position = 'fixed';
+                topRight.style.top = (offsetTop + 16) + 'px';
+                topRight.style.right = (offsetLeft + 16) + 'px';
+            }
+
+            // ─── 監聽 visualViewport 變化 ───
+            if (window.visualViewport) {
+                window.visualViewport.addEventListener('resize', updateUIPosition);
+                window.visualViewport.addEventListener('scroll', updateUIPosition);
+            }
+            window.addEventListener('resize', updateUIPosition);
+            window.addEventListener('orientationchange', function() {
+                setTimeout(updateUIPosition, 300);
+            });
 
             function updateUI() {
                 shotCount.textContent = count;
@@ -381,7 +437,7 @@
                     window.opener.postMessage(payload, '*');
                     console.log('✅ postMessage 已發送');
                     showToast('✅ 已傳送 ' + images.length + ' 張', '書籤處理中');
-                    
+
                     setTimeout(function() {
                         window.close();
                     }, 1500);
@@ -417,6 +473,7 @@
                 isCameraReady = true;
                 loading.style.display = 'none';
                 updateUI();
+                setTimeout(updateUIPosition, 100);
                 console.log('✅ 相機已開啟');
             })
             .catch(function(err) {
@@ -447,8 +504,11 @@
 
             window.addEventListener('beforeunload', function() { cleanup(); });
 
+            // 初始定位
+            setTimeout(updateUIPosition, 50);
+
             updateUI();
-            console.log('📷 Smart Capture 已啟動 (三張版)');
+            console.log('📷 Smart Capture 已啟動 (三張版 + visualViewport 定位)');
         })();
     </script>
 </body>
