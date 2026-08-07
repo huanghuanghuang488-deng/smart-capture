@@ -13,10 +13,10 @@
             height:100vh;
             display:flex;
             flex-direction:column;
-            touch-action: manipulation;
-            -webkit-touch-callout: none;
-            -webkit-user-select: none;
-            user-select: none;
+            touch-action:manipulation;
+            -webkit-touch-callout:none;
+            -webkit-user-select:none;
+            user-select:none;
             position:relative;
         }
         #video-container{
@@ -26,36 +26,34 @@
             position:relative;
             background:#000;
             overflow:hidden;
-            touch-action: manipulation;
+            touch-action:manipulation;
         }
         #video-container video{
             width:100%;
             height:100%;
             object-fit:cover;
-            touch-action: manipulation;
-            pointer-events: auto;
+            touch-action:manipulation;
+            pointer-events:auto;
         }
 
-        /* 🔥 所有 UI 元件使用 fixed + JS 控制位置 */
-        #ui-layer {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 100;
+        #ui-layer{
+            position:fixed;
+            top:0;
+            left:0;
+            width:100%;
+            height:100%;
+            pointer-events:none;
+            z-index:100;
         }
 
         #top-right{
             position:absolute;
-            top:16px;
-            right:16px;
             display:flex;
             flex-direction:column;
             align-items:flex-end;
             gap:6px;
-            pointer-events:none
+            pointer-events:none;
+            /* left 和 top 由 JS 控制 */
         }
         #top-right .count-badge{
             background:rgba(0,0,0,0.6);
@@ -99,7 +97,7 @@
             justify-content:center;
             box-shadow:0 4px 30px rgba(0,0,0,0.5);
             flex-shrink:0;
-            touch-action: manipulation;
+            touch-action:manipulation;
             pointer-events:auto;
         }
         #shoot-wrapper .shoot-btn .inner{
@@ -145,7 +143,7 @@
             display:block!important;
             visibility:visible!important;
             opacity:1!important;
-            touch-action: manipulation;
+            touch-action:manipulation;
             pointer-events:auto;
         }
         #bottom-right .cancel-btn:active{
@@ -233,7 +231,7 @@
         }
 
         * {
-            -webkit-tap-highlight-color: transparent;
+            -webkit-tap-highlight-color:transparent;
         }
     </style>
 </head>
@@ -250,7 +248,7 @@
         <div id="flash"></div>
     </div>
 
-    <!-- 🔥 UI 層：由 JS 控制位置 -->
+    <!-- 🔥 UI 層 -->
     <div id="ui-layer">
         <div id="top-right">
             <div class="count-badge">📸 <span id="shot-count">0</span>/3</div>
@@ -302,9 +300,9 @@
             var toastSub = document.getElementById('toast-sub');
             var loading = document.getElementById('loading');
 
-            // 🔥 UI 元件
             var shootWrapper = document.getElementById('shoot-wrapper');
             var bottomRight = document.getElementById('bottom-right');
+            var topRight = document.getElementById('top-right');
 
             // ─── 🔥 visualViewport 定位 ───
             function updateUIPosition() {
@@ -316,30 +314,41 @@
                 var offsetLeft = vv.offsetLeft || 0;
                 var offsetTop = vv.offsetTop || 0;
 
-                // 🔥 拍照按鈕：固定在可視範圍的右邊
+                // ==========================================
+                // 📸 拍照按鈕
+                // ==========================================
                 var btnSize = 76;
                 var margin = 20;
+
                 var shootX = offsetLeft + vw - btnSize - margin;
                 var shootY = offsetTop + (vh / 2) - (btnSize / 2);
 
                 shootWrapper.style.left = shootX + 'px';
                 shootWrapper.style.top = shootY + 'px';
 
-                // 🔥 取消按鈕：固定在可視範圍的右下角
-                var cancelWidth = 100; // 約略寬度
-                var cancelHeight = 50;
+                // ==========================================
+                // ❌ 取消按鈕
+                // ==========================================
+                var cancelWidth = bottomRight.offsetWidth || 100;
+                var cancelHeight = bottomRight.offsetHeight || 50;
                 var cancelMargin = 20;
+
                 var cancelX = offsetLeft + vw - cancelWidth - cancelMargin;
                 var cancelY = offsetTop + vh - cancelHeight - cancelMargin;
 
                 bottomRight.style.left = cancelX + 'px';
                 bottomRight.style.top = cancelY + 'px';
 
-                // 🔥 頂部資訊：固定在可視範圍的右上角
-                var topRight = document.getElementById('top-right');
-                topRight.style.position = 'fixed';
-                topRight.style.top = (offsetTop + 16) + 'px';
-                topRight.style.right = (offsetLeft + 16) + 'px';
+                // ==========================================
+                // 📊 右上角資訊
+                // ==========================================
+                var topRightWidth = topRight.offsetWidth || 80;
+                var topRightX = offsetLeft + vw - topRightWidth - 16;
+                var topRightY = offsetTop + 16;
+
+                topRight.style.left = topRightX + 'px';
+                topRight.style.top = topRightY + 'px';
+                topRight.style.right = 'auto';
             }
 
             // ─── 監聽 visualViewport 變化 ───
@@ -508,7 +517,7 @@
             setTimeout(updateUIPosition, 50);
 
             updateUI();
-            console.log('📷 Smart Capture 已啟動 (三張版 + visualViewport 定位)');
+            console.log('📷 Smart Capture 已啟動 (visualViewport 定位)');
         })();
     </script>
 </body>
